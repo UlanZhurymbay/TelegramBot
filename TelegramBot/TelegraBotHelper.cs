@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.IO;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -55,6 +56,20 @@ namespace TelegramBot
 
         //Любой сообщение приходит сюда
         async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await UpdateAsync(botClient, update, cancellationToken);
+            }
+            catch (Exception ex) //ошибка
+            {
+                //вывод на консоль
+                await Console.Out.WriteLineAsync(ex.Message);
+
+            }
+        }
+
+        private async Task UpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             switch (update.Type)
             {
@@ -138,7 +153,7 @@ namespace TelegramBot
                                 var i = 0;
                                 foreach (var items in clientMessage.HistoryProducts)
                                 {
-                                    messageHistory += $"{++i}) Заказ\n";
+                                    messageHistory += $"{i}) Заказ\n";
                                     foreach (var item in items)
                                     {
                                         messageHistory += $"{item.Key} - {item.Value}\n";
@@ -168,13 +183,13 @@ namespace TelegramBot
                         .Where(x => x.Count() == 1)
                         .Select(x => x.Select(x => x.CallbackData))
                         .FirstOrDefault()?
-                        .FirstOrDefault();
+                    .FirstOrDefault();
 
                     var counter = update.CallbackQuery.Message.ReplyMarkup!.InlineKeyboard
                         .Where(x => x.Count() > 1)
                         .Select(x => x.Where(x => x.CallbackData == Counter).Select(x => int.Parse(x.Text)))
                         .FirstOrDefault()?
-                        .FirstOrDefault();
+                    .FirstOrDefault();
 
 
                     switch (update.CallbackQuery.Data)
@@ -214,7 +229,7 @@ namespace TelegramBot
                             break;
                         case Tomato:
                             {
-                                if (!client.CashProducts.ContainsKey(Tomato) && client.CashProducts[Tomato] > 0)
+                                if (!client.CashProducts.ContainsKey(Tomato) || client.CashProducts[Tomato] > 0)
                                 {
                                     await _client.SendTextMessageAsync(callChatId, $"Сначала добавьте в корзину хотя бя один продукт '+'");
                                 }
@@ -228,14 +243,13 @@ namespace TelegramBot
                                 {
                                     client.Products.Add(Tomato, countTomatoProduct);
                                 }
-
                                 await _client.SendTextMessageAsync(update.CallbackQuery.Message.Chat.Id, $"Заказ {update.CallbackQuery.Data} - {countTomatoProduct} принят", replyMarkup: GetButtons());
                             }
 
                             break;
                         case Cabbage:
                             {
-                                if (!client.CashProducts.ContainsKey(Cabbage) && client.CashProducts[Cabbage] > 0)
+                                if (!client.CashProducts.ContainsKey(Cabbage) || client.CashProducts[Cabbage] > 0)
                                 {
                                     await _client.SendTextMessageAsync(callChatId, $"Сначала добавьте в корзину хотя бя один продукт '+'");
                                 }
@@ -249,10 +263,8 @@ namespace TelegramBot
                                 {
                                     client.Products.Add(Cabbage, countCabbageProduct);
                                 }
-
                                 await _client.SendTextMessageAsync(update.CallbackQuery.Message.Chat.Id, $"Заказ {update.CallbackQuery.Data} - {countCabbageProduct} принят", replyMarkup: GetButtons());
                             }
-
                             break;
 
                         case Order:
@@ -280,6 +292,7 @@ namespace TelegramBot
                     break;
             }
         }
+
 
         //ошибка
         Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
